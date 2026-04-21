@@ -20,7 +20,7 @@ sudo apt install apt-transport-oci
 - Create `/etc/apt/sources.list.d/oci.sources` with the following content:
 ```
 Types: deb
-URIs: oci://ghcr.io/akihirosuda/apt-transport-oci-examples/hello-apt-transport-oci:latest
+URIs: oci://ghcr.io/akihirosuda/apt-transport-oci-examples:latest
 Suites: stable
 Components: main
 Signed-By: /etc/apt/keyrings/apt-transport-oci-examples.gpg

@@ -36,7 +36,7 @@ jobs:
         # The image name must be in lowercase
         run: |
           set -eux
-          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}/hello-apt-transport-oci" | tee -a "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" | tee -a "$GITHUB_OUTPUT"
           echo "tag=latest" | tee -a "$GITHUB_OUTPUT"
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd  # v7.0.0
