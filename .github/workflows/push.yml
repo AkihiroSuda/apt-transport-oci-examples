@@ -27,13 +27,16 @@ jobs:
       attestations: write  # See above
       artifact-metadata: write  # See above
     timeout-minutes: 10
-    env:
-      IMAGE: ghcr.io/${{ github.repository }}/hello-apt-transport
-      IMAGE_TAG: latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           persist-credentials: false
+      - name: Set image name
+        # The image name must be in lowercase
+        run:
+          set -eux
+          echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY@L}/hello-apt-transport" >> "${GITHUB_ENV}"
+          echo "IMAGE_TAG=latest" >> "${GITHUB_ENV}"
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd  # v7.0.0
         with:
