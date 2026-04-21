@@ -34,7 +34,7 @@ jobs:
       - name: Set image name
         id: image
         # The image name must be in lowercase
-        run:
+        run: |
           set -eux
           echo "image=ghcr.io/${GITHUB_REPOSITORY,,}/hello-apt-transport" | tee -a "$GITHUB_OUTPUT"
           echo "tag=latest" | tee -a "$GITHUB_OUTPUT"
