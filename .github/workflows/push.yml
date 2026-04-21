@@ -47,7 +47,10 @@ jobs:
         run: |
           set -eux
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends aptly oras
+          # oras is not available in Ubuntu 24.04
+          sudo apt-get install -y --no-install-recommends aptly
+      - name: Install ORAS
+        uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3  # v2.0.0
       - name: Create the aptly repo
         run:  aptly repo create apt-transport-oci-examples
       - name: Build dpkg
