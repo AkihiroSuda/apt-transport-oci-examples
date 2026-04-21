@@ -46,8 +46,8 @@ jobs:
       - name: Install tools
         run: |
           set -eux
-          apt-get update
-          apt-get install -y --no-install-recommends aptly oras
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends aptly oras
       - name: Create the aptly repo
         run:  aptly repo create apt-transport-oci-examples
       - name: Build dpkg
