@@ -79,7 +79,7 @@ jobs:
           cd ~/.aptly/public
           find . -type f -printf "%p:application/octet-stream\n" | xargs oras push --export-manifest ~/manifest.json ${IMAGE}:${TAG}
           digest="$(sha256sum ~/manifest.json | cut -d' ' -f1)"
-          echo "digest=$digest" >>"$GITHUB_OUTPUT"
+          echo "digest=sha256:$digest" >>"$GITHUB_OUTPUT"
         env:
           IMAGE: ${{ steps.image.outputs.image }}
           TAG: ${{ steps.image.outputs.tag }}
