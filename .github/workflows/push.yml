@@ -1,0 +1,81 @@
+name: push
+
+on:
+  push:
+    # Push the image only when a new release or a snapshot is tagged
+    tags:
+      - 'v*'
+      - 'snapshot-*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  push:
+    name: Push
+    runs-on: ubuntu-24.04
+    environment: production
+    # Permissions are from https://github.com/actions/attest/blob/main/README.md#container-image
+    permissions:
+      id-token: write  # See above
+      packages: write  # See above
+      contents: read
+      attestations: write  # See above
+      artifact-metadata: write  # See above
+    timeout-minutes: 10
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}/hello-apt-transport
+      IMAGE_TAG: latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd  # v7.0.0
+        with:
+          # The keys must be present in the "production" envonment's secrets.
+          # See "Settings" → "Environments".
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+      - name: List GPG keys
+        run: gpg -K
+      - name: Install tools
+        run: |
+          set -eux
+          apt-get update
+          apt-get install -y --no-install-recommends aptly oras
+      - name: Create the aptly repo
+        run:  aptly repo create apt-transport-oci-examples
+      - name: Build dpkg
+        run: |
+          set -eux
+          version="$(grep -oP 'Version: \K[\d.]+' hello-apt-transport-oci/DEBIAN/control)"
+          dpkg="hello-apt-transport-oci_${version}_all.deb"
+          dpkg-deb --build --root-owner-group hello-apt-transport-oci "$dpkg"
+          aptly repo add apt-transport-oci-examples "$dpkg"
+      - name: Publish the aptly repo
+        run: aptly publish repo -distribution=stable -architectures=all,amd64,arm64,armhf,i386,loong64,ppc64el,riscv64,s390x apt-transport-oci-examples
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121  # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push
+        id: push
+        run: |
+          set -eux
+          cd ~/.aptly/public
+          find . -type f -printf "%p:application/octet-stream\n" | xargs oras push --export-manifest ~/manifest.json ${IMAGE}:${IMAGE_TAG}
+          digest="$(sha256sum ~/manifest.json | cut -d' ' -f1)"
+          echo "digest=$digest" >>"$GITHUB_OUTPUT"
+      - name: Attest
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26  # v4.1.0
+        with:
+          subject-name: ${{ env.IMAGE }}  # Must not contain a tag
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
