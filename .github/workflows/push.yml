@@ -32,11 +32,12 @@ jobs:
         with:
           persist-credentials: false
       - name: Set image name
+        id: image
         # The image name must be in lowercase
         run:
           set -eux
-          echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY@L}/hello-apt-transport" >> "${GITHUB_ENV}"
-          echo "IMAGE_TAG=latest" >> "${GITHUB_ENV}"
+          echo "image=ghcr.io/${GITHUB_REPOSITORY@L}/hello-apt-transport" >>"${GITHUB_OUTPUT}"
+          echo "tag=latest" >>"${GITHUB_OUTPUT}"
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd  # v7.0.0
         with:
@@ -76,12 +77,15 @@ jobs:
         run: |
           set -eux
           cd ~/.aptly/public
-          find . -type f -printf "%p:application/octet-stream\n" | xargs oras push --export-manifest ~/manifest.json ${IMAGE}:${IMAGE_TAG}
+          find . -type f -printf "%p:application/octet-stream\n" | xargs oras push --export-manifest ~/manifest.json ${IMAGE}:${TAG}
           digest="$(sha256sum ~/manifest.json | cut -d' ' -f1)"
           echo "digest=$digest" >>"$GITHUB_OUTPUT"
+        env:
+          IMAGE: ${{ steps.image.outputs.image }}
+          TAG: ${{ steps.image.outputs.tag }}
       - name: Attest
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26  # v4.1.0
         with:
-          subject-name: ${{ env.IMAGE }}  # Must not contain a tag
+          subject-name: ${{ steps.image.outputs.image }}  # Must not contain a tag
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
